@@ -53,7 +53,7 @@ class ForgotPasswordForm(FlaskForm):
 def index():
     # Get the latest dataset if available
     latest_dataset = Dataset.query.order_by(Dataset.upload_date.desc()).first()
-    return render_template('index.html', dataset=latest_dataset)
+    return render_template('index.html', dataset=latest_dataset, form=None)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
