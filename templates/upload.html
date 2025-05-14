@@ -1,0 +1,175 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<title>Upload Data - Demand Forecasting System</title>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid fade-in">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4><i class="fas fa-upload me-2"></i>Upload Sales Data</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <h5 class="mb-4">Data Requirements</h5>
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-info-circle me-2"></i>Required Columns:</h6>
+                                <ul class="mb-0">
+                                    <li><strong>Transaction_ID</strong>: Unique identifier for each transaction</li>
+                                    <li><strong>Product_Name</strong>: Name of the product sold</li>
+                                    <li><strong>Date</strong>: Date of the transaction</li>
+                                    <li><strong>Quantity</strong>: Number of units sold</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Accepted File Formats</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-flex flex-wrap">
+                                        <div class="me-4 mb-2">
+                                            <i class="fas fa-file-csv fa-2x me-2" style="color: var(--accent-primary);"></i>
+                                            <span>CSV</span>
+                                        </div>
+                                        <div class="me-4 mb-2">
+                                            <i class="fas fa-file-excel fa-2x me-2" style="color: var(--accent-primary);"></i>
+                                            <span>Excel (.xlsx)</span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <i class="fas fa-file-excel fa-2x me-2" style="color: var(--accent-primary);"></i>
+                                            <span>Excel (.xls)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Association Analysis Settings</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>These settings control the sensitivity of the association rule mining algorithm.</p>
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-4">Minimum Support:</dt>
+                                        <dd class="col-sm-8">The minimum frequency of item combinations in the dataset.</dd>
+                                        
+                                        <dt class="col-sm-4">Minimum Confidence:</dt>
+                                        <dd class="col-sm-8">The minimum reliability of the discovered rules.</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-6">
+                            <h5 class="mb-4">Upload Form</h5>
+                            <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data" id="data-upload-form" class="needs-validation" novalidate>
+                                <div class="mb-4">
+                                    <label for="file" class="form-label">Sales Data File</label>
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" id="file" name="file" accept=".csv, .xls, .xlsx" required>
+                                        <div class="invalid-feedback">
+                                            Please select a file to upload.
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Maximum file size: 16MB</small>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="min_support" class="form-label">Minimum Support</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="min_support" name="min_support" 
+                                            min="0.001" max="0.5" step="0.001" value="0.01" required>
+                                        <span class="input-group-text">%</span>
+                                        <div class="invalid-feedback">
+                                            Please enter a value between 0.001 and 0.5.
+                                        </div>
+                                    </div>
+                                    <div class="form-text">
+                                        Recommended: 0.01 (1%) for smaller datasets, 0.001 (0.1%) for larger datasets.
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="min_confidence" class="form-label">Minimum Confidence</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="min_confidence" name="min_confidence" 
+                                            min="0.1" max="1.0" step="0.05" value="0.2" required>
+                                        <span class="input-group-text">%</span>
+                                        <div class="invalid-feedback">
+                                            Please enter a value between 0.1 and 1.0.
+                                        </div>
+                                    </div>
+                                    <div class="form-text">
+                                        Recommended: 0.2 (20%) for exploratory analysis, 0.5 (50%) for high-confidence rules.
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-upload me-2"></i>Upload and Process Data
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <!-- Progress bar (hidden by default) -->
+                            <div id="upload-progress-container" class="mt-4 d-none">
+                                <label class="form-label">Upload Progress</label>
+                                <div class="progress">
+                                    <div id="upload-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                        role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <small class="text-muted mt-2">
+                                    Please wait while your file is being uploaded and processed. This may take a few minutes depending on file size.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4><i class="fas fa-info-circle me-2"></i>What Happens After Upload?</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="p-3">
+                                <i class="fas fa-check-circle fa-3x mb-3" style="color: var(--success);"></i>
+                                <h5>Data Validation</h5>
+                                <p>System checks for required columns and proper formatting.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="p-3">
+                                <i class="fas fa-microscope fa-3x mb-3" style="color: var(--accent-primary);"></i>
+                                <h5>Association Analysis</h5>
+                                <p>Apriori algorithm identifies product relationships and frequent itemsets.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="p-3">
+                                <i class="fas fa-brain fa-3x mb-3" style="color: var(--accent-secondary);"></i>
+                                <h5>Model Training</h5>
+                                <p>XGBoost model is trained on historical data with association features.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="p-3">
+                                <i class="fas fa-chart-line fa-3x mb-3" style="color: var(--warning);"></i>
+                                <h5>Demand Forecasting</h5>
+                                <p>System generates forecasts for all products in the dataset.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

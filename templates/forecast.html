@@ -1,0 +1,397 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<title>Demand Forecast - Demand Forecasting System</title>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid fade-in">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4><i class="fas fa-chart-line me-2"></i>Demand Forecast</h4>
+                    <span class="badge bg-primary">Dataset: {{ dataset.filename }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="dashboard-tile">
+                                <h6 class="tile-label">Total Records</h6>
+                                <div class="tile-value">{{ dataset.row_count }}</div>
+                                <i class="fas fa-database tile-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="dashboard-tile">
+                                <h6 class="tile-label">Date Range</h6>
+                                <div class="tile-value" style="font-size: 1.2rem;">
+                                    {{ dataset.date_range_start.strftime('%Y-%m-%d') }} to {{ dataset.date_range_end.strftime('%Y-%m-%d') }}
+                                </div>
+                                <i class="fas fa-calendar-alt tile-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="dashboard-tile">
+                                <h6 class="tile-label">Forecast Period</h6>
+                                <div class="tile-value">30 Days</div>
+                                <i class="fas fa-calendar-day tile-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="dashboard-tile">
+                                <h6 class="tile-label">Model</h6>
+                                <div class="tile-value">XGBoost</div>
+                                <i class="fas fa-brain tile-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Forecast Overview -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5>Demand Forecast Overview</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="position: relative; height: 400px;">
+                                <canvas id="forecast-chart" data-forecast="{{ forecast_data }}"></canvas>
+                            </div>
+                            <div class="mt-3">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    This chart displays the forecasted demand for each product over the next 30 days.
+                                    The forecast incorporates both historical sales data and product associations identified 
+                                    in the analysis phase, resulting in improved prediction accuracy.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Product Selection -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5>Product-Specific Forecast</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="product-selector" class="form-label">Select Product</label>
+                                    <select class="form-select" id="product-selector">
+                                        <option value="">Select a product...</option>
+                                        <!-- JavaScript will populate this dropdown -->
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-8">
+                                    <div id="single-product-forecast-container" style="display: none;">
+                                        <div class="chart-container" style="position: relative; height: 300px;">
+                                            <canvas id="single-product-forecast"></canvas>
+                                        </div>
+                                    </div>
+                                    <div id="product-select-prompt" class="text-center p-5">
+                                        <i class="fas fa-chart-bar fa-3x mb-3" style="color: var(--accent-primary);"></i>
+                                        <h5>Select a product to view its detailed forecast</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Associated Products -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Associated Products Forecast</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="associated-product-selector" class="form-label">Select Primary Product</label>
+                                    <select class="form-select" id="associated-product-selector">
+                                        <option value="">Select a product...</option>
+                                        <!-- JavaScript will populate this dropdown -->
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-8">
+                                    <div id="associated-products-container" style="display: none;">
+                                        <div class="chart-container" style="position: relative; height: 300px;">
+                                            <canvas id="associated-products-forecast"></canvas>
+                                        </div>
+                                        
+                                        <div class="mt-3">
+                                            <h6>Associated Products</h6>
+                                            <div id="associated-products-list" class="mt-2">
+                                                <!-- JavaScript will populate this list -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="associated-select-prompt" class="text-center p-5">
+                                        <i class="fas fa-project-diagram fa-3x mb-3" style="color: var(--accent-primary);"></i>
+                                        <h5>Select a product to view forecasts for associated products</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Parse forecast data
+        const forecastData = JSON.parse('{{ forecast_data|safe }}');
+        
+        // Get all product names
+        const productNames = Object.keys(forecastData);
+        
+        // Populate product selectors
+        const productSelector = document.getElementById('product-selector');
+        const associatedProductSelector = document.getElementById('associated-product-selector');
+        
+        productNames.forEach(product => {
+            const option1 = document.createElement('option');
+            option1.value = product;
+            option1.textContent = product;
+            productSelector.appendChild(option1);
+            
+            const option2 = document.createElement('option');
+            option2.value = product;
+            option2.textContent = product;
+            associatedProductSelector.appendChild(option2);
+        });
+        
+        // Initialize single product forecast chart
+        let singleProductChart = null;
+        
+        productSelector.addEventListener('change', function() {
+            const selectedProduct = this.value;
+            const singleProductForecastContainer = document.getElementById('single-product-forecast-container');
+            const productSelectPrompt = document.getElementById('product-select-prompt');
+            
+            if (selectedProduct) {
+                singleProductForecastContainer.style.display = 'block';
+                productSelectPrompt.style.display = 'none';
+                
+                // Get data for the selected product
+                const productData = forecastData[selectedProduct];
+                
+                // Prepare data for the chart
+                const dates = productData.map(item => item.date);
+                const quantities = productData.map(item => item.quantity);
+                
+                // Destroy previous chart if it exists
+                if (singleProductChart) {
+                    singleProductChart.destroy();
+                }
+                
+                // Create new chart
+                const ctx = document.getElementById('single-product-forecast').getContext('2d');
+                singleProductChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: selectedProduct,
+                            data: quantities,
+                            backgroundColor: colorPalette[0] + '33', // 20% opacity
+                            borderColor: colorPalette[0],
+                            borderWidth: 2,
+                            pointBackgroundColor: colorPalette[0],
+                            pointBorderColor: '#1E1E1E',
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Forecasted Quantity',
+                                    color: '#B3B3B3'
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.05)'
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: `Demand Forecast for ${selectedProduct}`,
+                                color: '#FFFFFF',
+                                font: {
+                                    size: 16
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                singleProductForecastContainer.style.display = 'none';
+                productSelectPrompt.style.display = 'block';
+                
+                // Destroy previous chart if it exists
+                if (singleProductChart) {
+                    singleProductChart.destroy();
+                    singleProductChart = null;
+                }
+            }
+        });
+        
+        // Initialize associated products forecast chart
+        let associatedProductsChart = null;
+        
+        associatedProductSelector.addEventListener('change', function() {
+            const selectedProduct = this.value;
+            const associatedProductsContainer = document.getElementById('associated-products-container');
+            const associatedSelectPrompt = document.getElementById('associated-select-prompt');
+            
+            if (selectedProduct) {
+                associatedProductsContainer.style.display = 'block';
+                associatedSelectPrompt.style.display = 'none';
+                
+                // Find associated products (in a real app, this would come from the backend)
+                // For demonstration, we'll take the top 3 other products
+                const otherProducts = productNames.filter(p => p !== selectedProduct).slice(0, 3);
+                
+                // Prepare data for the chart
+                const primaryProductData = forecastData[selectedProduct];
+                const dates = primaryProductData.map(item => item.date);
+                
+                const datasets = [
+                    {
+                        label: selectedProduct + ' (Primary)',
+                        data: primaryProductData.map(item => item.quantity),
+                        backgroundColor: colorPalette[0] + '33', // 20% opacity
+                        borderColor: colorPalette[0],
+                        borderWidth: 2,
+                        pointBackgroundColor: colorPalette[0],
+                        pointBorderColor: '#1E1E1E',
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        fill: false,
+                        tension: 0.4
+                    }
+                ];
+                
+                // Add associated products to datasets
+                otherProducts.forEach((product, index) => {
+                    const productData = forecastData[product];
+                    
+                    datasets.push({
+                        label: product + ' (Associated)',
+                        data: productData.map(item => item.quantity),
+                        backgroundColor: colorPalette[index + 1] + '33', // 20% opacity
+                        borderColor: colorPalette[index + 1],
+                        borderWidth: 2,
+                        pointBackgroundColor: colorPalette[index + 1],
+                        pointBorderColor: '#1E1E1E',
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        fill: false,
+                        tension: 0.4
+                    });
+                });
+                
+                // Destroy previous chart if it exists
+                if (associatedProductsChart) {
+                    associatedProductsChart.destroy();
+                }
+                
+                // Create new chart
+                const ctx = document.getElementById('associated-products-forecast').getContext('2d');
+                associatedProductsChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Forecasted Quantity',
+                                    color: '#B3B3B3'
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.05)'
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: `Forecast for ${selectedProduct} and Associated Products`,
+                                color: '#FFFFFF',
+                                font: {
+                                    size: 16
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                // Update associated products list
+                const associatedProductsList = document.getElementById('associated-products-list');
+                associatedProductsList.innerHTML = '';
+                
+                otherProducts.forEach((product, index) => {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge me-2 mb-2';
+                    badge.style.backgroundColor = colorPalette[index + 1];
+                    badge.style.padding = '8px 12px';
+                    badge.textContent = product;
+                    
+                    associatedProductsList.appendChild(badge);
+                });
+            } else {
+                associatedProductsContainer.style.display = 'none';
+                associatedSelectPrompt.style.display = 'block';
+                
+                // Destroy previous chart if it exists
+                if (associatedProductsChart) {
+                    associatedProductsChart.destroy();
+                    associatedProductsChart = null;
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

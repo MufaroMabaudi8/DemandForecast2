@@ -1,0 +1,275 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<title>Association Analysis - Demand Forecasting System</title>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid fade-in">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4><i class="fas fa-microscope me-2"></i>Product Association Analysis</h4>
+                    <span class="badge bg-primary">Dataset: {{ dataset.filename }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="dashboard-tile">
+                                <h6 class="tile-label">Total Records</h6>
+                                <div class="tile-value">{{ dataset.row_count }}</div>
+                                <i class="fas fa-database tile-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="dashboard-tile">
+                                <h6 class="tile-label">Unique Products</h6>
+                                <div class="tile-value">{{ dataset.product_count }}</div>
+                                <i class="fas fa-box tile-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="dashboard-tile">
+                                <h6 class="tile-label">Transactions</h6>
+                                <div class="tile-value">{{ dataset.transaction_count }}</div>
+                                <i class="fas fa-receipt tile-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="dashboard-tile">
+                                <h6 class="tile-label">Date Range</h6>
+                                <div class="tile-value" style="font-size: 1.2rem;">
+                                    {{ dataset.date_range_start.strftime('%Y-%m-%d') }} to {{ dataset.date_range_end.strftime('%Y-%m-%d') }}
+                                </div>
+                                <i class="fas fa-calendar-alt tile-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sales Data Visualization -->
+                    <div class="row mb-4">
+                        <div class="col-lg-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Sales Data Overview</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="chart-container">
+                                                <h6 class="chart-title">Top Products by Sales Volume</h6>
+                                                <canvas id="sales-chart" height="300"></canvas>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="chart-container">
+                                                <h6 class="chart-title">Sales Over Time</h6>
+                                                <canvas id="sales-time-chart" height="300"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Association Rules -->
+                    <div class="row mb-4">
+                        <div class="col-lg-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5>Association Rules</h5>
+                                    <div>
+                                        <span class="badge bg-secondary me-2">Support Threshold: {{ rules[0].support if rules else 'N/A' }}</span>
+                                        <span class="badge bg-secondary">Confidence Threshold: {{ rules[0].confidence if rules else 'N/A' }}</span>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    {% if rules and rules|length > 0 %}
+                                        <div class="table-responsive mb-4">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Antecedents</th>
+                                                        <th>Consequents</th>
+                                                        <th>Support</th>
+                                                        <th>Confidence</th>
+                                                        <th>Lift</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for rule in rules[:20] %}  <!-- Limit to first 20 rules -->
+                                                        <tr>
+                                                            <td>{{ rule.antecedents|join(', ') }}</td>
+                                                            <td>{{ rule.consequents|join(', ') }}</td>
+                                                            <td>{{ "%.3f"|format(rule.support) }}</td>
+                                                            <td>{{ "%.3f"|format(rule.confidence) }}</td>
+                                                            <td>{{ "%.3f"|format(rule.lift) }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        
+                                        {% if rules|length > 20 %}
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                Showing top 20 rules out of {{ rules|length }} discovered. Rules are sorted by lift (highest first).
+                                            </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            No association rules were found with the current support and confidence thresholds. Try lowering the thresholds or upload a dataset with more transactions.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Association Visualizations -->
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Association Visualizations</h5>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="nav nav-tabs mb-4" id="visualizationTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" id="network-tab" data-bs-toggle="tab" data-bs-target="#network-viz" type="button" role="tab" aria-controls="network-viz" aria-selected="true">
+                                                <i class="fas fa-project-diagram me-2"></i>Network Graph
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="heatmap-tab" data-bs-toggle="tab" data-bs-target="#heatmap-viz" type="button" role="tab" aria-controls="heatmap-viz" aria-selected="false">
+                                                <i class="fas fa-th me-2"></i>Heatmap
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="scatter-tab" data-bs-toggle="tab" data-bs-target="#scatter-viz" type="button" role="tab" aria-controls="scatter-viz" aria-selected="false">
+                                                <i class="fas fa-chart-scatter me-2"></i>Scatter Plot
+                                            </button>
+                                        </li>
+                                    </ul>
+                                    
+                                    <div class="tab-content" id="visualizationTabContent">
+                                        <div class="tab-pane fade show active" id="network-viz" role="tabpanel" aria-labelledby="network-tab">
+                                            {% if rules and rules|length > 0 %}
+                                                <div class="mb-3">
+                                                    <p>This network graph visualizes product associations. Each node represents a product, and each edge represents an association rule. Stronger relationships have thicker lines.</p>
+                                                </div>
+                                                <div id="association-network" class="chart-container" style="height: 500px;" data-rules="{{ rules|tojson }}"></div>
+                                            {% else %}
+                                                <div class="alert alert-warning">
+                                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                                    No association rules available to visualize.
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="tab-pane fade" id="heatmap-viz" role="tabpanel" aria-labelledby="heatmap-tab">
+                                            {% if rules and rules|length > 0 %}
+                                                <div class="mb-3">
+                                                    <p>This heatmap shows the strength of associations between products. Darker colors indicate stronger relationships (higher lift values).</p>
+                                                </div>
+                                                <div class="chart-container" style="height: 500px;">
+                                                    <canvas id="association-heatmap" data-rules="{{ rules|tojson }}"></canvas>
+                                                </div>
+                                            {% else %}
+                                                <div class="alert alert-warning">
+                                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                                    No association rules available to visualize.
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="tab-pane fade" id="scatter-viz" role="tabpanel" aria-labelledby="scatter-tab">
+                                            {% if rules and rules|length > 0 %}
+                                                <div class="mb-3">
+                                                    <p>This scatter plot shows association rules by support and confidence. The size of each bubble indicates the lift value (larger = stronger relationship).</p>
+                                                </div>
+                                                <div class="chart-container" style="height: 500px;">
+                                                    <canvas id="scatter-plot" data-rules="{{ rules|tojson }}"></canvas>
+                                                </div>
+                                            {% else %}
+                                                <div class="alert alert-warning">
+                                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                                    No association rules available to visualize.
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize Chart.js Matrix plugin for heatmap if needed
+    if (!Chart.controllers.matrix) {
+        const matrixController = {
+            id: 'matrix',
+            defaults: {
+                borderWidth: 1,
+                borderColor: 'transparent',
+                width: ({ chart }) => chart.chartArea.width / chart.scales.x.ticks.length,
+                height: ({ chart }) => chart.chartArea.height / chart.scales.y.ticks.length
+            },
+            dataElementType: 'matrix',
+            
+            draw(ctx) {
+                const meta = this.getMeta();
+                const { data } = meta;
+                const { width, height } = this.resolveDataElementOptions(0);
+                
+                ctx.save();
+                
+                for (let i = 0; i < data.length; i++) {
+                    const el = data[i];
+                    const options = this.resolveDataElementOptions(i);
+                    
+                    ctx.beginPath();
+                    ctx.fillStyle = options.backgroundColor;
+                    ctx.fillRect(el.x - width / 2, el.y - height / 2, width, height);
+                    
+                    if (options.borderWidth) {
+                        ctx.strokeStyle = options.borderColor;
+                        ctx.lineWidth = options.borderWidth;
+                        ctx.strokeRect(el.x - width / 2, el.y - height / 2, width, height);
+                    }
+                }
+                
+                ctx.restore();
+            }
+        };
+        
+        const matrixElement = {
+            id: 'matrix',
+            draw(ctx, { element }) {
+                const { width, height, x, y } = element;
+                
+                ctx.fillStyle = element.options.backgroundColor;
+                ctx.fillRect(x - width / 2, y - height / 2, width, height);
+                
+                if (element.options.borderWidth) {
+                    ctx.strokeStyle = element.options.borderColor;
+                    ctx.lineWidth = element.options.borderWidth;
+                    ctx.strokeRect(x - width / 2, y - height / 2, width, height);
+                }
+            }
+        };
+        
+        Chart.register(matrixController, matrixElement);
+    }
+</script>
+{% endblock %}
