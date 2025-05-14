@@ -1,0 +1,114 @@
+Project Title: Demand Forecast Based on Product Associations
+
+Project Overview
+This project is a demand forecasting system that integrates product association analysis to enhance demand predictions. The system should enable businesses to upload sales data, analyze product associations, and predict demand more accurately using machine learning models.
+
+1. System Overview
+The system is a web-based application that allows businesses to:
+
+Upload historical sales data.
+
+Analyze product associations using the Apriori algorithm.
+
+Predict future demand using both historical sales data and identified product associations via a machine learning model (XGBoost).
+
+View and export analyses and forecast results in graphical formats.
+
+The system should be user-friendly, secure, and modular to allow easy upgrades.
+
+2. System Modules and Features
+A. User Authentication Module
+Signup Page:
+
+Fields: Full Name, Email, Password, Confirm Password.
+
+Validation for existing emails and strong passwords.
+
+Login Page:
+
+Fields: Email, Password.
+.
+
+B. Homepage
+Welcome message with branding.
+
+Quick navigation tiles/buttons:
+
+Upload Data.
+
+Analyze Data.
+
+View Product Associations.
+
+Predict Demand.
+
+Display recent activities or system usage stats 
+
+C. Dashboard
+User-specific dashboard.
+
+Panels showing:
+
+Recent uploads.
+
+Status of analyses (pending/completed/failed).
+
+Quick forecast highlights.
+
+System notifications.
+
+D. Sidebar (Always visible, collapsible)
+Upload Data
+
+Allow users to upload transactional sales data (CSV or Excel formats).
+
+Validation checks:
+
+Required columns ( Transaction_ID, Product_Name, Date, Quantity).
+
+File size limit (e.g., 5MB).
+
+Display uploaded data summary.
+
+Analyze Data (Product Association Mining)
+
+Trigger Apriori algorithm on uploaded data.
+
+Set minimum support and confidence thresholds (user-configurable).
+
+Display progress/status.
+
+Show output:
+visualize the sales data (bar graph)
+
+Frequent itemsets table.
+
+Association rules table with support, confidence, lift.
+
+Visualization (e.g scatter plots or heatmaps of product relationships).
+
+View Product Associations
+
+
+Visualization of associations.
+
+
+Predict Demand (Forecasting Module)
+
+automatically predict the demand of the product or associated products.
+
+Use trained XGBoost model (integrated with association data as additional features).
+
+Display forecasted demand (for selected future period: daily, weekly, or monthly).
+
+Also predict demand for associated products.
+
+Graphs: line charts, bar charts.
+futuristic professional data visualization to display the trends
+
+this is a hybrid demand system that incorporates sales data and product associations in order to predict the demand of individual products and also associated products . this helps in inventory management          
+
+this system should be offline based 
+create using python and flask 
+apply a dark modern user interface 
+system should be automatic , user  should only a dataset and everything should be automatic
