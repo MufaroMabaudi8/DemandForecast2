@@ -149,16 +149,10 @@
                                         {% if heatmap_image %}
                                             <div class="chart-container" style="height: auto; text-align: center;">
                                                 <img src="data:image/png;base64,{{ heatmap_image }}" alt="Product Association Heatmap" style="max-width: 100%; height: auto; margin: 0 auto;">
-                                                <div class="text-center mt-2">
-                                                    <small class="text-muted">© Mufaro Mabaudi</small>
-                                                </div>
                                             </div>
                                         {% else %}
                                             <div class="chart-container" style="height: 600px;">
                                                 <canvas id="association-heatmap" data-rules="{{ rules|tojson }}"></canvas>
-                                                <div class="text-center mt-2">
-                                                    <small class="text-muted">© Mufaro Mabaudi</small>
-                                                </div>
                                             </div>
                                         {% endif %}
                                     {% else %}
