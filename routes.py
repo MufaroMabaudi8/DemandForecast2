@@ -301,7 +301,21 @@ def analysis():
             logging.error(f"Error regenerating sales data: {str(e)}")
             sales_data = {'top_products': {}, 'sales_over_time': []}
     
-    return render_template('analysis.html', dataset=dataset, rules=rules_data, sales_data=json.dumps(sales_data))
+    # Generate association heatmap
+    heatmap_image = None
+    if rules_data:
+        try:
+            heatmap_image = generate_association_heatmap(rules_data)
+            logging.info(f"Generated association heatmap with {len(rules_data)} rules")
+        except Exception as e:
+            logging.error(f"Error generating heatmap: {str(e)}")
+            flash(f'Error generating association heatmap: {str(e)}', 'warning')
+    
+    return render_template('analysis.html', 
+                          dataset=dataset, 
+                          rules=rules_data, 
+                          sales_data=json.dumps(sales_data),
+                          heatmap_image=heatmap_image)
 
 @app.route('/forecast')
 @login_required

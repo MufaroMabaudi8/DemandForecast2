@@ -146,9 +146,15 @@
                                         <div class="mb-3">
                                             <p>This heatmap shows the strength of associations between products. Darker colors indicate stronger relationships (higher lift values).</p>
                                         </div>
-                                        <div class="chart-container" style="height: 600px;">
-                                            <canvas id="association-heatmap" data-rules="{{ rules|tojson }}"></canvas>
-                                        </div>
+                                        {% if heatmap_image %}
+                                            <div class="chart-container" style="height: auto; text-align: center;">
+                                                <img src="data:image/png;base64,{{ heatmap_image }}" alt="Product Association Heatmap" style="max-width: 100%; height: auto; margin: 0 auto;">
+                                            </div>
+                                        {% else %}
+                                            <div class="chart-container" style="height: 600px;">
+                                                <canvas id="association-heatmap" data-rules="{{ rules|tojson }}"></canvas>
+                                            </div>
+                                        {% endif %}
                                     {% else %}
                                         <div class="alert alert-warning">
                                             <i class="fas fa-exclamation-triangle me-2"></i>
