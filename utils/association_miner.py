@@ -24,7 +24,7 @@ def prepare_transactions(df):
     
     return df_encoded
 
-def run_apriori(df, min_support=0.01, min_confidence=0.2):
+def run_apriori(df, min_support=0.05, min_confidence=0.2):
     """
     Run the Apriori algorithm and generate association rules.
     
@@ -40,6 +40,9 @@ def run_apriori(df, min_support=0.01, min_confidence=0.2):
         # Prepare transaction data
         df_encoded = prepare_transactions(df)
         
+        logging.info(f"Running Apriori with min_support={min_support}, min_confidence={min_confidence}")
+        logging.info(f"Transaction data shape: {df_encoded.shape}")
+        
         # Run apriori to find frequent itemsets
         frequent_itemsets = apriori(df_encoded, min_support=min_support, use_colnames=True)
         
@@ -47,6 +50,8 @@ def run_apriori(df, min_support=0.01, min_confidence=0.2):
         if frequent_itemsets.empty:
             logging.warning("No frequent itemsets found with the current support threshold.")
             return pd.DataFrame()
+        
+        logging.info(f"Found {len(frequent_itemsets)} frequent itemsets")
         
         # Generate association rules
         rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=min_confidence)
@@ -56,14 +61,21 @@ def run_apriori(df, min_support=0.01, min_confidence=0.2):
             logging.warning("No association rules found with the current confidence threshold.")
             return pd.DataFrame()
         
+        logging.info(f"Generated {len(rules)} association rules")
+        
         # Sort rules by lift (descending)
         rules = rules.sort_values('lift', ascending=False)
+        
+        # Convert frozensets to lists for easier serialization
+        rules['antecedents'] = rules['antecedents'].apply(lambda x: list(x))
+        rules['consequents'] = rules['consequents'].apply(lambda x: list(x))
         
         return rules
     
     except Exception as e:
         logging.error(f"Error running Apriori algorithm: {str(e)}")
-        raise
+        logging.exception("Full exception details:")
+        return pd.DataFrame()
 
 def visualize_association_rules(rules):
     """

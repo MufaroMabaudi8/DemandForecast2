@@ -1,0 +1,58 @@
+
+Currently, the system is able to upload and detect the sales data, but it is not performing the following essential functionalities:(CAN YOU FIX THE FOLLOWING ISSUES AND MAKE THE SYSTEM FUNCTIONAL)
+
+Product Association Mining (Apriori) is not working or returning empty results.
+
+Uploaded data is not visualized (sales trends, top products).
+Demand forecasting module is not generating or displaying forecasts.
+
+Required Fixes and Adjustments:
+1. Product Association Mining (Apriori Algorithm)
+Ensure the system:
+
+Processes the uploaded data into a basket format (Transaction_ID grouped by Product_Name).
+Applies the Apriori algorithm with adjustable thresholds:
+
+Suggested default thresholds:
+
+Minimum Support: 0.05
+Minimum Confidence: 0.2
+Handles cases with low data density by allowing the user to adjust thresholds.
+
+Displays association rules clearly in a table with columns for Product 1, Product 2, Support, Confidence, Lift.
+Visualizes product associations using graphs or association matrix.
+
+2. Data Visualization Module
+Implement automatic data visualization immediately after upload, including:
+
+Sales volume by product (bar chart).
+Sales trends over time (line chart).
+Top-selling products (bar chart).
+
+
+3. Demand Forecasting Module
+Ensure the forecasting module:
+Uses XGBoost to predict demand for individual and associated products.
+
+Provides options to forecast:
+Daily, weekly, or monthly demand.
+
+Displays results in:
+
+Forecast trend line charts.
+Forecast summary tables (Predicted Quantity, Date).
+Provides warnings if data is insufficient for forecasting.
+
+4. General System Improvements
+Ensure error handling and user notifications are clear and user-friendly:
+
+Example: "No associations found. Try lowering the support threshold."
+Example: "Insufficient data for demand forecasting."
+
+
+Expected Outcome:
+Fully functional system with:
+Correct product association mining and visualization.
+Data visualization of uploaded sales data.
+Accurate demand forecasting module integrated and visible to users.
+

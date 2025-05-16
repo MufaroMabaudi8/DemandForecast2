@@ -193,14 +193,21 @@ def upload():
                 forecast_results = forecast_demand(df)
                 
                 # Save forecast results to database
-                for product, forecasts in forecast_results.items():
-                    for date, quantity in forecasts.items():
+                forecast_count = 0
+                for product, product_forecasts in forecast_results.items():
+                    for forecast_item in product_forecasts:
                         new_forecast = Forecast()
                         new_forecast.dataset_id = new_dataset.id
                         new_forecast.product_name = product
-                        new_forecast.forecast_date = date
-                        new_forecast.predicted_quantity = quantity
+                        new_forecast.forecast_date = datetime.strptime(forecast_item['date'], '%Y-%m-%d')
+                        new_forecast.predicted_quantity = float(forecast_item['quantity'])
                         db.session.add(new_forecast)
+                        forecast_count += 1
+                
+                if forecast_count == 0:
+                    flash('Unable to generate demand forecasts. The data may be insufficient.', 'warning')
+                else:
+                    flash(f'Generated {forecast_count} forecast data points across all products.', 'success')
                 
                 db.session.commit()
                 

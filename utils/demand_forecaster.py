@@ -105,9 +105,16 @@ def forecast_demand(df, forecast_days=30):
         dict: Forecasted demand by product and date
     """
     try:
+        # Check if we have enough data
+        if len(df) < 30:
+            logging.warning("Insufficient data for accurate forecasting. Minimum 30 records recommended.")
+            
         # Prepare features
         X, y, le, daily_sales = prepare_features(df)
         
+        if len(X) < 10:
+            logging.warning("Very limited data after feature preparation. Forecasts may be inaccurate.")
+            
         # Train the model
         model = train_model(X, y)
         
@@ -115,19 +122,25 @@ def forecast_demand(df, forecast_days=30):
         max_date = df['Date'].max()
         product_names = df['Product_Name'].unique()
         
+        logging.info(f"Forecasting demand for {len(product_names)} products over {forecast_days} days")
+        
         forecast_results = {}
         
         for product in product_names:
-            forecast_results[product] = {}
+            forecast_results[product] = []
             
             # Get the latest data for this product
             product_data = daily_sales[daily_sales['Product_Name'] == product].sort_values('Date')
             
             if product_data.empty:
+                logging.warning(f"No data available for product: {product}")
                 continue
             
             # Get the encoded value for this product
             product_encoded = le.transform([product])[0]
+            
+            # Store the last known values for updating rolling features
+            last_predictions = {}
             
             # Iterate through each day to forecast
             for i in range(1, forecast_days + 1):
@@ -144,21 +157,42 @@ def forecast_demand(df, forecast_days=30):
                 }
                 
                 # Use the last known values for lag and rolling features
-                features['Lag1'] = product_data['Quantity'].iloc[-1] if i == 1 else forecast_results[product][
-                    (max_date + timedelta(days=i-1)).strftime('%Y-%m-%d')]
-                features['Lag7'] = product_data['Quantity'].iloc[-7] if len(product_data) >= 7 else product_data['Quantity'].mean()
-                features['RollingMean7'] = product_data['Quantity'].iloc[-7:].mean()
-                features['RollingMean30'] = product_data['Quantity'].iloc[-30:].mean() if len(product_data) >= 30 else product_data['Quantity'].mean()
+                if i == 1:
+                    features['Lag1'] = float(product_data['Quantity'].iloc[-1])
+                else:
+                    features['Lag1'] = last_predictions.get(i-1, float(product_data['Quantity'].mean()))
+                
+                # Handle lag7 (previous week's sales)
+                if len(product_data) >= 7:
+                    features['Lag7'] = float(product_data['Quantity'].iloc[-7])
+                else:
+                    features['Lag7'] = float(product_data['Quantity'].mean())
+                
+                # Handle rolling means
+                features['RollingMean7'] = float(product_data['Quantity'].iloc[-min(7, len(product_data)):].mean())
+                
+                if len(product_data) >= 30:
+                    features['RollingMean30'] = float(product_data['Quantity'].iloc[-30:].mean())
+                else:
+                    features['RollingMean30'] = float(product_data['Quantity'].mean())
                 
                 # Make prediction
                 features_df = pd.DataFrame([features])
-                prediction = max(0, model.predict(features_df)[0])  # Ensure non-negative prediction
+                prediction = max(0, float(model.predict(features_df)[0]))  # Ensure non-negative prediction
                 
-                # Store forecast
-                forecast_results[product][forecast_date.strftime('%Y-%m-%d')] = prediction
+                # Store for next iteration
+                last_predictions[i] = prediction
+                
+                # Store forecast in the list format to avoid JSON serialization issues
+                forecast_results[product].append({
+                    'date': forecast_date.strftime('%Y-%m-%d'),
+                    'quantity': prediction
+                })
         
         return forecast_results
     
     except Exception as e:
         logging.error(f"Error forecasting demand: {str(e)}")
-        raise
+        logging.exception("Full exception details:")
+        # Return empty result instead of raising an exception
+        return {}
