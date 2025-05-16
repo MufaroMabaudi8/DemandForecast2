@@ -1,7 +1,7 @@
 import os
 import json
 import pandas as pd
-import datetime
+from datetime import datetime
 from flask import render_template, request, redirect, url_for, flash, jsonify, session
 from werkzeug.utils import secure_filename
 from flask_wtf import FlaskForm

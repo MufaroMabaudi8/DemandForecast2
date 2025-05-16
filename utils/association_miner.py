@@ -14,15 +14,26 @@ def prepare_transactions(df):
     Returns:
         DataFrame: One-hot encoded transaction data
     """
+    # Check if we have at least two transactions
+    transaction_count = df['Transaction_ID'].nunique()
+    if transaction_count < 2:
+        logging.warning(f"Only {transaction_count} unique transactions found. Association mining requires multiple transactions.")
+        return pd.DataFrame()
+        
     # Group by transaction ID and create lists of products
     transactions = df.groupby('Transaction_ID')['Product_Name'].apply(list).tolist()
     
     # One-hot encode the transactions
-    te = TransactionEncoder()
-    te_ary = te.fit(transactions).transform(transactions)
-    df_encoded = pd.DataFrame(te_ary, columns=te.columns_)
-    
-    return df_encoded
+    try:
+        te = TransactionEncoder()
+        te_ary = te.fit(transactions).transform(transactions)
+        column_names = list(te.columns_)
+        df_encoded = pd.DataFrame(te_ary, columns=column_names)
+        return df_encoded
+    except Exception as e:
+        logging.error(f"Error in transaction encoding: {str(e)}")
+        logging.exception("Full details:")
+        return pd.DataFrame()
 
 def run_apriori(df, min_support=0.05, min_confidence=0.2):
     """

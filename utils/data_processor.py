@@ -124,18 +124,40 @@ def get_sales_data_for_visualization(df):
     Returns:
         dict: Data for visualization
     """
-    # Group by product and date to get total sales
-    product_sales = df.groupby('Product_Name')['Quantity'].sum().sort_values(ascending=False)
-    top_products = product_sales.head(10)
-    
-    # Group by date to get sales over time
-    sales_over_time = df.groupby(df['Date'].dt.strftime('%Y-%m-%d')).agg({
-        'Quantity': 'sum',
-        'Transaction_ID': 'nunique'
-    }).reset_index()
-    sales_over_time.columns = ['Date', 'Total_Quantity', 'Transaction_Count']
-    
-    return {
-        'top_products': top_products.to_dict(),
-        'sales_over_time': sales_over_time.to_dict(orient='records')
-    }
+    try:
+        # Group by product and date to get total sales
+        product_sales = df.groupby('Product_Name')['Quantity'].sum().sort_values(ascending=False)
+        top_products = product_sales.head(10).to_dict()
+        
+        # Ensure we have date data
+        if df.empty or 'Date' not in df.columns:
+            return {
+                'top_products': top_products,
+                'sales_over_time': []
+            }
+        
+        # Group by date to get sales over time
+        try:
+            # Convert to string format for easier JSON serialization
+            df['Date_Str'] = df['Date'].dt.strftime('%Y-%m-%d')
+            sales_over_time = df.groupby('Date_Str').agg({
+                'Quantity': 'sum',
+                'Transaction_ID': 'nunique'
+            }).reset_index()
+            
+            sales_over_time.columns = ['Date', 'Total_Quantity', 'Transaction_Count']
+            sales_over_time_list = sales_over_time.to_dict(orient='records')
+        except Exception as e:
+            print(f"Error processing time series data: {str(e)}")
+            sales_over_time_list = []
+        
+        return {
+            'top_products': top_products,
+            'sales_over_time': sales_over_time_list
+        }
+    except Exception as e:
+        print(f"Error in sales data visualization: {str(e)}")
+        return {
+            'top_products': {},
+            'sales_over_time': []
+        }

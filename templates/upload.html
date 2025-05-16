@@ -83,14 +83,13 @@
                                     <label for="min_support" class="form-label">Minimum Support</label>
                                     <div class="input-group">
                                         <input type="number" class="form-control" id="min_support" name="min_support" 
-                                            min="0.001" max="0.5" step="0.001" value="0.01" required>
-                                        <span class="input-group-text">%</span>
+                                            min="0.001" max="0.5" step="0.001" value="0.05" required>
                                         <div class="invalid-feedback">
                                             Please enter a value between 0.001 and 0.5.
                                         </div>
                                     </div>
                                     <div class="form-text">
-                                        Recommended: 0.01 (1%) for smaller datasets, 0.001 (0.1%) for larger datasets.
+                                        Recommended: 0.05 (5%) for smaller datasets, 0.01 (1%) for larger datasets. Lower values find more associations but may be less reliable.
                                     </div>
                                 </div>
                                 
