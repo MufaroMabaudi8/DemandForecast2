@@ -279,9 +279,318 @@ function createEnhancedHeatmap(canvas, rules) {
   }
 }
 
+// Enhanced Product Sales Chart (Bar Chart)
+function createEnhancedProductSalesChart(canvas, salesData) {
+  if (!salesData) {
+    console.warn("No sales data provided for product chart");
+    canvas.parentNode.innerHTML = `
+      <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        No product sales data available for visualization.
+      </div>`;
+    return;
+  }
+  
+  try {
+    let parsedData = salesData;
+    if (typeof salesData === 'string') {
+      parsedData = JSON.parse(salesData);
+    }
+    
+    // Extract product names and quantities from top_products
+    const topProducts = parsedData.top_products || {};
+    const productNames = Object.keys(topProducts).slice(0, 10); // Limit to top 10
+    const quantities = Object.values(topProducts).slice(0, 10);
+    
+    if (productNames.length === 0) {
+      canvas.parentNode.innerHTML = `
+        <div class="alert alert-warning">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          No product sales data available for visualization.
+        </div>`;
+      return;
+    }
+    
+    // Create a gradient for the bars
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(64, 192, 255, 0.8)');
+    gradient.addColorStop(1, 'rgba(64, 192, 255, 0.2)');
+    
+    const chart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: productNames,
+        datasets: [{
+          label: 'Sales Volume',
+          data: quantities,
+          backgroundColor: gradient,
+          borderColor: 'rgba(64, 192, 255, 1)',
+          borderWidth: 1,
+          borderRadius: 4,
+          barThickness: 'flex',
+          maxBarThickness: 35
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y', // Horizontal bar chart for better product name display
+        scales: {
+          x: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            title: {
+              display: true,
+              text: 'Quantity Sold',
+              font: {
+                weight: 'bold'
+              }
+            }
+          },
+          y: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              font: {
+                size: 11
+              }
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleFont: {
+              weight: 'bold'
+            },
+            callbacks: {
+              title: function(context) {
+                return context[0].label;
+              },
+              label: function(context) {
+                return `Quantity Sold: ${context.formattedValue}`;
+              }
+            }
+          }
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error creating product sales chart:", error);
+    canvas.parentNode.innerHTML = `
+      <div class="alert alert-danger">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        Error rendering product chart: ${error.message}
+      </div>`;
+  }
+}
+
+// Enhanced Sales Over Time Chart (Line Chart)
+function createEnhancedSalesOverTimeChart(canvas, salesData) {
+  if (!salesData) {
+    console.warn("No sales data provided for time series chart");
+    canvas.parentNode.innerHTML = `
+      <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        No time series data available for visualization.
+      </div>`;
+    return;
+  }
+  
+  try {
+    let parsedData = salesData;
+    if (typeof salesData === 'string') {
+      parsedData = JSON.parse(salesData);
+    }
+    
+    // Extract time series data
+    const salesOverTime = parsedData.sales_over_time || [];
+    
+    if (salesOverTime.length === 0) {
+      canvas.parentNode.innerHTML = `
+        <div class="alert alert-warning">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          No time series data available for visualization.
+        </div>`;
+      return;
+    }
+    
+    // Extract dates and values
+    const dates = salesOverTime.map(item => item.Date);
+    const quantities = salesOverTime.map(item => item.Total_Quantity);
+    const transactions = salesOverTime.map(item => item.Transaction_Count);
+    
+    // Create gradients for the line areas
+    const ctx = canvas.getContext('2d');
+    
+    const quantityGradient = ctx.createLinearGradient(0, 0, 0, 300);
+    quantityGradient.addColorStop(0, 'rgba(113, 93, 255, 0.6)');
+    quantityGradient.addColorStop(1, 'rgba(113, 93, 255, 0.1)');
+    
+    const transactionGradient = ctx.createLinearGradient(0, 0, 0, 300);
+    transactionGradient.addColorStop(0, 'rgba(255, 166, 0, 0.6)');
+    transactionGradient.addColorStop(1, 'rgba(255, 166, 0, 0.1)');
+    
+    const chart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [
+          {
+            label: 'Total Quantity',
+            data: quantities,
+            backgroundColor: quantityGradient,
+            borderColor: 'rgb(113, 93, 255)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 3,
+            pointHoverRadius: 6,
+            pointBackgroundColor: 'rgb(113, 93, 255)',
+            pointBorderColor: '#1E1E1E',
+            pointBorderWidth: 1,
+            yAxisID: 'y'
+          },
+          {
+            label: 'Transactions',
+            data: transactions,
+            backgroundColor: transactionGradient,
+            borderColor: 'rgb(255, 166, 0)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 3,
+            pointHoverRadius: 6,
+            pointBackgroundColor: 'rgb(255, 166, 0)',
+            pointBorderColor: '#1E1E1E',
+            pointBorderWidth: 1,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              maxRotation: 45,
+              minRotation: 45,
+              callback: function(value, index) {
+                // Show fewer labels if many data points
+                return dates.length > 15 && index % 2 !== 0 ? '' : dates[index];
+              },
+              font: {
+                size: 10
+              }
+            }
+          },
+          y: {
+            position: 'left',
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Total Quantity',
+              font: {
+                weight: 'bold'
+              }
+            },
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            }
+          },
+          y1: {
+            position: 'right',
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Transaction Count',
+              font: {
+                weight: 'bold'
+              }
+            },
+            grid: {
+              display: false
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleFont: {
+              weight: 'bold',
+              size: 13
+            },
+            bodyFont: {
+              size: 12
+            },
+            callbacks: {
+              title: function(context) {
+                return `Date: ${context[0].label}`;
+              }
+            }
+          },
+          legend: {
+            position: 'top',
+            labels: {
+              usePointStyle: true,
+              padding: 15,
+              boxWidth: 8,
+              boxHeight: 8
+            }
+          }
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error creating sales over time chart:", error);
+    canvas.parentNode.innerHTML = `
+      <div class="alert alert-danger">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        Error rendering time series chart: ${error.message}
+      </div>`;
+  }
+}
+
 // Apply our enhanced visualizations
 document.addEventListener('DOMContentLoaded', function() {
-  // Check if we have association data and canvas
+  // Check for product sales chart
+  const salesChartCanvas = document.getElementById('sales-chart');
+  if (salesChartCanvas) {
+    try {
+      const salesData = salesChartCanvas.dataset.sales;
+      createEnhancedProductSalesChart(salesChartCanvas, salesData);
+    } catch (error) {
+      console.error("Error initializing product sales chart:", error);
+    }
+  }
+  
+  // Check for sales over time chart
+  const salesTimeChartCanvas = document.getElementById('sales-time-chart');
+  if (salesTimeChartCanvas) {
+    try {
+      const salesData = salesTimeChartCanvas.dataset.sales;
+      createEnhancedSalesOverTimeChart(salesTimeChartCanvas, salesData);
+    } catch (error) {
+      console.error("Error initializing sales over time chart:", error);
+    }
+  }
+  
+  // Check for association heatmap
   const heatmapCanvas = document.getElementById('association-heatmap');
   if (heatmapCanvas) {
     try {

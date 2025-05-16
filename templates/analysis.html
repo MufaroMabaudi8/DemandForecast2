@@ -214,6 +214,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/enhanced-visualizations.js') }}"></script>
 <script>
     // Initialize Chart.js Matrix plugin for heatmap if needed
     if (!Chart.controllers.matrix) {
