@@ -13,6 +13,7 @@ from models import User, Dataset, Association, Forecast
 from utils.data_processor import process_data, validate_data, get_dataset_summary, get_sales_data_for_visualization
 from utils.association_miner import run_apriori, visualize_association_rules
 from utils.demand_forecaster import forecast_demand
+from utils.heatmap_generator import generate_association_heatmap, generate_metrics_visualization
 import logging
 
 ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls'}
@@ -259,7 +260,24 @@ def analysis():
                 'lift': rule.lift
             })
         except json.JSONDecodeError:
-            # Handle malformed JSON
+            # Alternative parsing for non-JSON format
+            try:
+                antecedents = rule.antecedents.strip('[]').split(',')
+                antecedents = [a.strip().strip("'\"") for a in antecedents]
+                
+                consequents = rule.consequents.strip('[]').split(',')
+                consequents = [c.strip().strip("'\"") for c in consequents]
+                
+                rules_data.append({
+                    'antecedents': antecedents,
+                    'consequents': consequents,
+                    'support': rule.support,
+                    'confidence': rule.confidence,
+                    'lift': rule.lift
+                })
+            except Exception as e:
+                logging.error(f"Error parsing rule {rule.id}: {str(e)}")
+                continue
             continue
     
     # Get sales data for visualization (from session or regenerate)
