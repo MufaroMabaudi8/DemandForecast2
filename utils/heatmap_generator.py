@@ -27,8 +27,13 @@ def generate_association_heatmap(rules, max_products=15):
     # Extract product information and count frequency
     product_frequency = {}
     for rule in rules:
-        antecedents = rule.antecedents if isinstance(rule.antecedents, list) else [rule.antecedents]
-        consequents = rule.consequents if isinstance(rule.consequents, list) else [rule.consequents]
+        # Handle both dict and object access patterns
+        if isinstance(rule, dict):
+            antecedents = rule['antecedents'] if isinstance(rule['antecedents'], list) else [rule['antecedents']]
+            consequents = rule['consequents'] if isinstance(rule['consequents'], list) else [rule['consequents']]
+        else:
+            antecedents = rule.antecedents if isinstance(rule.antecedents, list) else [rule.antecedents]
+            consequents = rule.consequents if isinstance(rule.consequents, list) else [rule.consequents]
         
         for product in antecedents + consequents:
             if product in product_frequency:
@@ -49,14 +54,27 @@ def generate_association_heatmap(rules, max_products=15):
         for j, p2 in enumerate(top_products):
             if i != j:  # Skip self-associations
                 # Find rules where p1 -> p2
-                matching_rules = [r for r in rules if 
-                                 (p1 in (r.antecedents if isinstance(r.antecedents, list) else [r.antecedents])) and 
-                                 (p2 in (r.consequents if isinstance(r.consequents, list) else [r.consequents]))]
+                matching_rules = []
+                for r in rules:
+                    if isinstance(r, dict):
+                        antecedents = r['antecedents'] if isinstance(r['antecedents'], list) else [r['antecedents']]
+                        consequents = r['consequents'] if isinstance(r['consequents'], list) else [r['consequents']]
+                        if p1 in antecedents and p2 in consequents:
+                            matching_rules.append(r)
+                    else:
+                        antecedents = r.antecedents if isinstance(r.antecedents, list) else [r.antecedents]
+                        consequents = r.consequents if isinstance(r.consequents, list) else [r.consequents]
+                        if p1 in antecedents and p2 in consequents:
+                            matching_rules.append(r)
                 
                 if matching_rules:
                     # Use the highest lift value if multiple rules exist
-                    best_rule = max(matching_rules, key=lambda r: r.lift)
-                    heatmap_matrix[i, j] = best_rule.lift
+                    if isinstance(matching_rules[0], dict):
+                        best_rule = max(matching_rules, key=lambda r: r['lift'])
+                        heatmap_matrix[i, j] = best_rule['lift']
+                    else:
+                        best_rule = max(matching_rules, key=lambda r: r.lift)
+                        heatmap_matrix[i, j] = best_rule.lift
     
     # Create the heatmap
     plt.figure(figsize=(12, 10))
@@ -121,9 +139,19 @@ def generate_metrics_visualization(rules):
         return None
     
     # Extract metrics
-    supports = [rule.support for rule in rules]
-    confidences = [rule.confidence for rule in rules]
-    lifts = [rule.lift for rule in rules]
+    supports = []
+    confidences = []
+    lifts = []
+    
+    for rule in rules:
+        if isinstance(rule, dict):
+            supports.append(rule['support'])
+            confidences.append(rule['confidence'])
+            lifts.append(rule['lift'])
+        else:
+            supports.append(rule.support)
+            confidences.append(rule.confidence)
+            lifts.append(rule.lift)
     
     # Create the scatter plot
     plt.figure(figsize=(10, 6))
