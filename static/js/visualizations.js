@@ -51,21 +51,53 @@ document.addEventListener('DOMContentLoaded', function() {
 function initSalesVisualizations() {
     const salesChartCanvas = document.getElementById('sales-chart');
     if (salesChartCanvas) {
-        // Get sales data from data attribute
-        const salesData = JSON.parse(salesChartCanvas.dataset.sales || '{}');
-        
-        if (salesData && salesData.top_products) {
-            createProductSalesChart(salesChartCanvas, salesData.top_products);
+        try {
+            // Get sales data from data attribute
+            const salesData = JSON.parse(salesChartCanvas.dataset.sales || '{}');
+            
+            if (salesData && salesData.top_products) {
+                createProductSalesChart(salesChartCanvas, salesData.top_products);
+            } else {
+                console.warn("No top products data available for visualization");
+                salesChartCanvas.parentNode.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        No product sales data available for visualization.
+                    </div>`;
+            }
+        } catch (error) {
+            console.error("Error initializing product sales chart:", error);
+            salesChartCanvas.parentNode.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error loading sales data: ${error.message}
+                </div>`;
         }
     }
     
     const salesTimeChartCanvas = document.getElementById('sales-time-chart');
     if (salesTimeChartCanvas) {
-        // Get sales over time data from data attribute
-        const salesTimeData = JSON.parse(salesTimeChartCanvas.dataset.salesTime || '{}');
-        
-        if (salesTimeData) {
-            createSalesOverTimeChart(salesTimeChartCanvas, salesTimeData);
+        try {
+            // Get sales over time data from data attribute
+            const salesData = JSON.parse(salesTimeChartCanvas.dataset.sales || '{}');
+            
+            if (salesData && salesData.sales_over_time && salesData.sales_over_time.length > 0) {
+                createSalesOverTimeChart(salesTimeChartCanvas, salesData.sales_over_time);
+            } else {
+                console.warn("No time series data available for visualization");
+                salesTimeChartCanvas.parentNode.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        No time series data available for visualization.
+                    </div>`;
+            }
+        } catch (error) {
+            console.error("Error initializing sales over time chart:", error);
+            salesTimeChartCanvas.parentNode.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error loading time series data: ${error.message}
+                </div>`;
         }
     }
 }
