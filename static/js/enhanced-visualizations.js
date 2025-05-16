@@ -308,7 +308,7 @@ function createEnhancedProductSalesChart(canvas, salesData) {
           <i class="fas fa-exclamation-triangle me-2"></i>
           No product sales data available for visualization.
         </div>`;
-      return;
+      return null;
     }
     
     // Create a gradient for the bars
@@ -382,6 +382,7 @@ function createEnhancedProductSalesChart(canvas, salesData) {
         }
       }
     });
+    return chart;
   } catch (error) {
     console.error("Error creating product sales chart:", error);
     canvas.parentNode.innerHTML = `
@@ -389,6 +390,7 @@ function createEnhancedProductSalesChart(canvas, salesData) {
         <i class="fas fa-exclamation-circle me-2"></i>
         Error rendering product chart: ${error.message}
       </div>`;
+    return null;
   }
 }
 
@@ -419,7 +421,7 @@ function createEnhancedSalesOverTimeChart(canvas, salesData) {
           <i class="fas fa-exclamation-triangle me-2"></i>
           No time series data available for visualization.
         </div>`;
-      return;
+      return null;
     }
     
     // Extract dates and values
@@ -556,6 +558,7 @@ function createEnhancedSalesOverTimeChart(canvas, salesData) {
         }
       }
     });
+    return chart;
   } catch (error) {
     console.error("Error creating sales over time chart:", error);
     canvas.parentNode.innerHTML = `
@@ -563,17 +566,46 @@ function createEnhancedSalesOverTimeChart(canvas, salesData) {
         <i class="fas fa-exclamation-circle me-2"></i>
         Error rendering time series chart: ${error.message}
       </div>`;
+    return null;
   }
 }
 
+// Chart instances for cleanup
+let productSalesChart = null;
+let salesTimeChart = null;
+let associationHeatmapChart = null;
+
 // Apply our enhanced visualizations
 document.addEventListener('DOMContentLoaded', function() {
+  // Destroy any existing charts first to prevent the "Canvas already in use" error
+  if (productSalesChart) {
+    productSalesChart.destroy();
+    productSalesChart = null;
+  }
+  
+  if (salesTimeChart) {
+    salesTimeChart.destroy();
+    salesTimeChart = null;
+  }
+  
+  if (associationHeatmapChart) {
+    associationHeatmapChart.destroy();
+    associationHeatmapChart = null;
+  }
+  
   // Check for product sales chart
   const salesChartCanvas = document.getElementById('sales-chart');
   if (salesChartCanvas) {
     try {
       const salesData = salesChartCanvas.dataset.sales;
-      createEnhancedProductSalesChart(salesChartCanvas, salesData);
+      if (salesData) {
+        // Clear any existing chart instance
+        Chart.getChart(salesChartCanvas)?.destroy();
+        
+        // Create the new chart and store the instance
+        const chart = createEnhancedProductSalesChart(salesChartCanvas, salesData);
+        if (chart) productSalesChart = chart;
+      }
     } catch (error) {
       console.error("Error initializing product sales chart:", error);
     }
@@ -584,7 +616,14 @@ document.addEventListener('DOMContentLoaded', function() {
   if (salesTimeChartCanvas) {
     try {
       const salesData = salesTimeChartCanvas.dataset.sales;
-      createEnhancedSalesOverTimeChart(salesTimeChartCanvas, salesData);
+      if (salesData) {
+        // Clear any existing chart instance
+        Chart.getChart(salesTimeChartCanvas)?.destroy();
+        
+        // Create the new chart and store the instance
+        const chart = createEnhancedSalesOverTimeChart(salesTimeChartCanvas, salesData);
+        if (chart) salesTimeChart = chart;
+      }
     } catch (error) {
       console.error("Error initializing sales over time chart:", error);
     }
@@ -596,7 +635,12 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       const rulesData = JSON.parse(heatmapCanvas.dataset.rules || '[]');
       if (rulesData && rulesData.length > 0) {
-        createEnhancedHeatmap(heatmapCanvas, rulesData);
+        // Clear any existing chart instance
+        Chart.getChart(heatmapCanvas)?.destroy();
+        
+        // Create the new chart and store the instance
+        const chart = createEnhancedHeatmap(heatmapCanvas, rulesData);
+        if (chart) associationHeatmapChart = chart;
       }
     } catch (error) {
       console.error("Error initializing enhanced heatmap:", error);
