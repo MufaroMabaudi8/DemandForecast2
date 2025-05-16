@@ -50,8 +50,10 @@ function createEnhancedHeatmap(canvas, rules) {
         <i class="fas fa-exclamation-triangle me-2"></i>
         No association rules available for visualization.
       </div>`;
-    return;
+    return null;
   }
+  
+  console.log("Creating enhanced heatmap with", rules.length, "rules");
   
   try {
     // Extract unique products (limit to top products for readability)
@@ -60,7 +62,11 @@ function createEnhancedHeatmap(canvas, rules) {
     
     // Count product frequency
     rules.forEach(rule => {
-      [...rule.antecedents, ...rule.consequents].forEach(product => {
+      // Handle both array and string formats for antecedents/consequents
+      const antecedents = Array.isArray(rule.antecedents) ? rule.antecedents : [rule.antecedents];
+      const consequents = Array.isArray(rule.consequents) ? rule.consequents : [rule.consequents];
+      
+      [...antecedents, ...consequents].forEach(product => {
         productFrequency.set(product, (productFrequency.get(product) || 0) + 1);
       });
     });
@@ -577,6 +583,8 @@ let associationHeatmapChart = null;
 
 // Apply our enhanced visualizations
 document.addEventListener('DOMContentLoaded', function() {
+  console.log("DOM loaded, initializing visualizations");
+  
   // Destroy any existing charts first to prevent the "Canvas already in use" error
   if (productSalesChart) {
     productSalesChart.destroy();
@@ -599,6 +607,7 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       const salesData = salesChartCanvas.dataset.sales;
       if (salesData) {
+        console.log("Found sales chart canvas, initializing...");
         // Clear any existing chart instance
         Chart.getChart(salesChartCanvas)?.destroy();
         
@@ -617,6 +626,7 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       const salesData = salesTimeChartCanvas.dataset.sales;
       if (salesData) {
+        console.log("Found sales time chart canvas, initializing...");
         // Clear any existing chart instance
         Chart.getChart(salesTimeChartCanvas)?.destroy();
         
@@ -633,17 +643,42 @@ document.addEventListener('DOMContentLoaded', function() {
   const heatmapCanvas = document.getElementById('association-heatmap');
   if (heatmapCanvas) {
     try {
-      const rulesData = JSON.parse(heatmapCanvas.dataset.rules || '[]');
+      console.log("Found heatmap canvas, attempting to initialize...");
+      let rulesData;
+      try {
+        rulesData = JSON.parse(heatmapCanvas.dataset.rules || '[]');
+        console.log("Parsed rules data:", rulesData.length, "rules found");
+      } catch (parseError) {
+        console.error("Error parsing rules data:", parseError);
+        rulesData = [];
+      }
+      
       if (rulesData && rulesData.length > 0) {
+        console.log("Creating heatmap with", rulesData.length, "rules");
         // Clear any existing chart instance
-        Chart.getChart(heatmapCanvas)?.destroy();
+        if (Chart.getChart(heatmapCanvas)) {
+          console.log("Destroying existing heatmap chart");
+          Chart.getChart(heatmapCanvas).destroy();
+        }
         
         // Create the new chart and store the instance
-        const chart = createEnhancedHeatmap(heatmapCanvas, rulesData);
-        if (chart) associationHeatmapChart = chart;
+        setTimeout(() => {
+          console.log("Initializing heatmap with timeout");
+          const chart = createEnhancedHeatmap(heatmapCanvas, rulesData);
+          if (chart) {
+            console.log("Heatmap created successfully");
+            associationHeatmapChart = chart;
+          } else {
+            console.error("Failed to create heatmap chart");
+          }
+        }, 100);
+      } else {
+        console.warn("No rules data available for heatmap");
       }
     } catch (error) {
       console.error("Error initializing enhanced heatmap:", error);
     }
+  } else {
+    console.warn("Association heatmap canvas not found");
   }
 });
