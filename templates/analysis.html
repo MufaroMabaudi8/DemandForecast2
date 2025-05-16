@@ -55,17 +55,22 @@
                                     <h5>Sales Data Overview</h5>
                                 </div>
                                 <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="chart-container">
-                                                <h6 class="chart-title">Top Products by Sales Volume</h6>
-                                                <canvas id="sales-chart" height="300" data-sales='{{ sales_data }}'></canvas>
+                                    <!-- Top Products by Sales Volume (Full Width) -->
+                                    <div class="row mb-4">
+                                        <div class="col-12">
+                                            <h6 class="chart-title">Top Products by Sales Volume</h6>
+                                            <div class="chart-container" style="height: 350px;">
+                                                <canvas id="sales-chart" data-sales='{{ sales_data }}'></canvas>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="chart-container">
-                                                <h6 class="chart-title">Sales Over Time</h6>
-                                                <canvas id="sales-time-chart" height="300" data-sales='{{ sales_data }}'></canvas>
+                                    </div>
+                                    
+                                    <!-- Sales Over Time (Full Width) -->
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <h6 class="chart-title">Sales Over Time</h6>
+                                            <div class="chart-container" style="height: 350px;">
+                                                <canvas id="sales-time-chart" data-sales='{{ sales_data }}'></canvas>
                                             </div>
                                         </div>
                                     </div>
