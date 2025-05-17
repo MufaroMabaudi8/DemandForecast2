@@ -735,6 +735,7 @@ dependencies = [
     { name = "scikit-learn" },
     { name = "sqlalchemy" },
     { name = "werkzeug" },
+    { name = "wtforms" },
     { name = "xgboost" },
 ]
 
@@ -753,6 +754,7 @@ requires-dist = [
     { name = "scikit-learn", specifier = ">=1.6.1" },
     { name = "sqlalchemy", specifier = ">=2.0.40" },
     { name = "werkzeug", specifier = ">=3.1.3" },
+    { name = "wtforms", specifier = ">=3.2.1" },
     { name = "xgboost", specifier = ">=3.0.1" },
 ]
 
