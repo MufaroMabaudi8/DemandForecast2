@@ -18,7 +18,22 @@ app.secret_key = os.environ.get("SESSION_SECRET", "supersecretkey")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure PostgreSQL database
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+if os.environ.get("DATABASE_URL"):
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+else:
+    # Set up connection parameters from individual environment variables as a fallback
+    pg_user = os.environ.get("PGUSER")
+    pg_password = os.environ.get("PGPASSWORD")
+    pg_host = os.environ.get("PGHOST")
+    pg_port = os.environ.get("PGPORT")
+    pg_database = os.environ.get("PGDATABASE")
+    
+    if pg_user and pg_password and pg_host and pg_port and pg_database:
+        app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}"
+    else:
+        # Raise an error if no database connection information is available
+        raise RuntimeError("PostgreSQL database connection information not found. Please check your environment variables.")
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
